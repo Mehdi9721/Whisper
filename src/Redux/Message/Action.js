@@ -44,4 +44,5 @@ export const getAllMessages = (reqData) => async (dispatch) => {
   } catch (error) {
     console.log("catch error ", error);
   }
+  
 };

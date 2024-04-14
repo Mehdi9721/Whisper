@@ -24,7 +24,7 @@
   import { createMessage, getAllMessages } from "../Redux/Message/Action";
   import SockJs from "sockjs-client/dist/sockjs";
   import { over } from "stompjs";
-
+  import Stomp from "stompjs";
   function HomePage() {
     // State variables
     const [querys, setQuerys] = useState("");
@@ -44,11 +44,13 @@
     const [lastMessages, setLastMessages] = useState({});
     const [count,setCount]=useState(0);
     // Function to establish a WebSocket connection
+
+
+
     const connect = () => {
       const sock = new SockJs("http://localhost:8080/ws");
       const temp = over(sock);
       setStompClient(temp);
-
       const headers = {
         Authorization: `Bearer ${token}`,
         "X-XSRF-TOKEN": getCookie("XSRF-TOKEN"),
@@ -78,6 +80,13 @@
 
     // Effect to handle incoming new messages from WebSocket
 
+    // setInterval(() => {
+    //   setCount((pre)=>pre+1);
+    //  }, 10000);
+
+    //  console.log(count + "val");
+
+    
     useEffect(() => {
       if (message.newMessage && stompClient) {
         setMessages([...messages, message.newMessage]);
@@ -93,10 +102,16 @@
       }
     },[message.messages]);
 
-    // Callback to handle received messages from WebSocket
-    const onMessageRecieve = (payload) => {
-      console.log("reciever message ", JSON.parse(payload.body));
 
+    // Callback to handle received messages from WebSocket
+
+//   useEffect(()=>{
+//   onMessageRecieve();
+// },[message.newMessage,message.messages])
+
+
+    const onMessageRecieve = (payload) => {
+      // console.log("reciever message ", JSON.parse(payload.body));
       const receivedMessage = JSON.parse(payload.body);
       setMessages(prevMessages => [...prevMessages, receivedMessage]);
     };
@@ -118,13 +133,9 @@
     }, [isConnected, stompClient, auth.reqUser, currentChat]);
 
     // Effect to establish a WebSocket connection
-    setInterval(() => {
-     setCount((pre)=>pre+1);
-    }, 1000);
+
     
-    useEffect(() => {
-      connect();
-    }, []);
+
 
     // Function to handle opening the user menu
     const handleClick = (e) => {
@@ -148,6 +159,7 @@
     };
 
     // Function to create a new message
+
     const handleCreateNewMessage = () => {
  
       dispatch(
@@ -160,6 +172,9 @@
     };
 
     // Effect to get all messages when the current chat changes
+
+
+    
     useEffect(() => {
       if (currentChat?.id) {
         dispatch(getAllMessages({ chatId: currentChat.id, token }));
@@ -177,6 +192,7 @@
       const chatWithUser = chat.chats.find(chat => 
         chat.users.some(user => user.id === userId)
       );
+
       // Set the current chat to the chat with the selected user
       setCurrentChat(chatWithUser);
       setIsProfile(true); // Set isProfile to true to show the profile section
@@ -217,11 +233,30 @@
 
     // Effect to fetch messages when chat changes
     useEffect(() => {
-      chat.chats &&
-        chat.chats?.forEach((item) => {
+      if (Array.isArray(chat.chats)) {
+        chat.chats.forEach((item) => {
           dispatch(getAllMessages({ chatId: item.id, token }));
         });
+      }
     }, [chat.chats, token, dispatch]);
+    
+
+    //adding mine
+    const fetchMessages = () => {
+      // Dispatch action to get all messages from the server
+      dispatch(getAllMessages({ chatId: currentChat?.id, token }));
+    };
+    useEffect(() => {
+      // Fetch messages initially when the component mounts
+      fetchMessages();
+      // Set interval to fetch messages periodically
+      const interval = setInterval(() => {
+        fetchMessages();
+      }, 3500); // Fetch messages every 5 seconds (adjust as needed)
+      // Cleanup function to clear the interval when component unmounts
+      return () => clearInterval(interval);
+    }, [currentChat, dispatch, token]);
+
 
     // Effect to update lastMessages when messages change
     useEffect(() => {
@@ -317,9 +352,6 @@
                       <BsFilter className="ml-4 text-3xl" />
                     </div>
                   </div>
-
-                  {/* User and Group Chats */}
-
                 {/* User and Group Chats */}
   <div className="bg-white overflow-y-scroll h-[73vh] px-3">
     <div className="chats-container ">
@@ -345,6 +377,7 @@
             />
           </div>
         ))}
+
       {chat.chats?.length > 0 &&
         !querys &&
         // Inside the JSX of HomePage component where ChatCard is rendered
@@ -400,6 +433,8 @@
             )}
           </div>
         ))}
+
+        
     </div>
   </div>
 
